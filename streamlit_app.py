@@ -3,7 +3,6 @@ import openai
 from newspaper import Article
 from urllib.parse import urlparse
 import html
-import base64
 from PIL import Image
 import io
 
@@ -169,6 +168,16 @@ def generate_html_report(original_text, transformed_text, analysis, outlet):
 def main():
     st.set_page_config(page_title=APP_NAME, page_icon="🗞️", layout="wide")
 
+    # Initialize session state
+    if 'original_text' not in st.session_state:
+        st.session_state.original_text = None
+    if 'transformed_text' not in st.session_state:
+        st.session_state.transformed_text = None
+    if 'analysis' not in st.session_state:
+        st.session_state.analysis = None
+    if 'outlet' not in st.session_state:
+        st.session_state.outlet = None
+
     # Load and display logo
     logo_img = Image.open("./tim_logo.png")
     logo_img = logo_img.resize((200, 100))
@@ -198,42 +207,50 @@ def main():
                 original_text, transformed_text, analysis = transform_media(input_text, outlet)
 
             if original_text and transformed_text and analysis:
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.subheader("Original Text")
-                    st.text_area("", value=original_text, height=400, disabled=True)
-                with col2:
-                    st.subheader(f"{outlet} Style")
-                    st.text_area("", value=transformed_text, height=400, disabled=True)
+                # Save results to session state
+                st.session_state.original_text = original_text
+                st.session_state.transformed_text = transformed_text
+                st.session_state.analysis = analysis
+                st.session_state.outlet = outlet
 
-                st.subheader("Transformation Analysis")
-                st.text_area("", value=analysis, height=200, disabled=True)
+    # Display results if available
+    if st.session_state.original_text and st.session_state.transformed_text and st.session_state.analysis:
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("Original Text")
+            st.text_area("", value=st.session_state.original_text, height=400, disabled=True)
+        with col2:
+            st.subheader(f"{st.session_state.outlet} Style")
+            st.text_area("", value=st.session_state.transformed_text, height=400, disabled=True)
 
-                # HTML Report
-                html_report = generate_html_report(original_text, transformed_text, analysis, outlet)
+        st.subheader("Transformation Analysis")
+        st.text_area("", value=st.session_state.analysis, height=200, disabled=True)
+
+        # HTML Report
+        html_report = generate_html_report(st.session_state.original_text, st.session_state.transformed_text, st.session_state.analysis, st.session_state.outlet)
+        st.download_button(
+            label="Save Report as HTML",
+            data=html_report,
+            file_name="transformation_report.html",
+            mime="text/html"
+        )
+
+        # Simulate Social Media Posts
+        if st.button("Simulate Social Media Posts"):
+            with st.spinner("Generating social media posts..."):
+                social_media_posts = simulate_social_media_posts(st.session_state.original_text, st.session_state.transformed_text, st.session_state.outlet)
+            
+            if social_media_posts:
+                st.subheader("Simulated Social Media Posts")
+                st.text_area("", value=social_media_posts, height=400, disabled=True)
+                
+                # Download button for social media posts
                 st.download_button(
-                    label="Save Report as HTML",
-                    data=html_report,
-                    file_name="transformation_report.html",
-                    mime="text/html"
+                    label="Save Posts as Text",
+                    data=social_media_posts,
+                    file_name="simulated_social_media_posts.txt",
+                    mime="text/plain"
                 )
-
-                # Simulate Social Media Posts
-                if st.button("Simulate Social Media Posts"):
-                    with st.spinner("Generating social media posts..."):
-                        social_media_posts = simulate_social_media_posts(original_text, transformed_text, outlet)
-                    
-                    if social_media_posts:
-                        st.subheader("Simulated Social Media Posts")
-                        st.text_area("", value=social_media_posts, height=400, disabled=True)
-                        
-                        # Download button for social media posts
-                        st.download_button(
-                            label="Save Posts as Text",
-                            data=social_media_posts,
-                            file_name="simulated_social_media_posts.txt",
-                            mime="text/plain"
-                        )
 
 if __name__ == "__main__":
     main()
