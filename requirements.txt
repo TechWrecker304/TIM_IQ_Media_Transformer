@@ -1,0 +1,7 @@
+streamlit>=1.25.0
+openai==0.27.8
+newspaper3k>=0.2.8
+Pillow>=10.0.0
+lxml==4.9.3
+beautifulsoup4>=4.12.2
+requests>=2.31.0
